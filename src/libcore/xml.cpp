@@ -376,6 +376,26 @@ void upgrade_tree(XMLSource &src, pugi::xml_node &node, const Version &version) 
         }
         for (pugi::xpath_node result: node.select_nodes("//lookAt"))
             result.node().set_name("lookat");
+
+        // renamed features
+        // note: order matters, mitsuba 1 pure sky first!
+        for (pugi::xpath_node result: node.select_nodes("//emitter[@type='sky']")) {
+            pugi::xml_node n = result.node();
+            pugi::xml_node ns = n.append_child("float");
+            ns.append_attribute("name") = "sun_scale";
+            ns.append_attribute("value") = "0";
+        }
+        // other sky types now subsumed by new 'sky' plugin
+        for (pugi::xpath_node result: node.select_nodes("//emitter[@type='sun']")) {
+            pugi::xml_node n = result.node();
+            n.attribute("type") = "sky";
+            pugi::xml_node ns = n.append_child("float");
+            ns.append_attribute("name") = "sky_scale";
+            ns.append_attribute("value") = "0";
+        }
+        for (pugi::xpath_node result: node.select_nodes("//emitter[@type='sunsky']"))
+            result.node().attribute("type") = "sky";
+
         // automatically rename reserved identifiers
         for (pugi::xpath_node result: node.select_nodes("//@id")) {
             pugi::xml_attribute id_attrib = result.attribute();
